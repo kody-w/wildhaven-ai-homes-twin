@@ -6537,5 +6537,219 @@ async function onPwaInstalled() {
   }
 </script>
 
+<!-- ═════════════════════════════════════════════════════════════════════════
+     wildhaven-ai-homes-twin overlay — added on top of the upstream
+     vBrainstem (kody-w/RAPP/rapp_brainstem/utils/web/index.html @ 0.12.2).
+     Two non-invasive features, both implemented as a self-contained
+     IIFE that does not modify any existing vBrainstem behavior:
+       1. ?summon=<owner>/<repo> handler — fetches the named twin's
+          rappid.json + soul.md from raw.githubusercontent.com, shows a
+          summon banner with brand info; window.WAH_SUMMON exposes the
+          parsed metadata for downstream integration.
+       2. "Hatch on device" floating button — opens a modal with the
+          install one-liner + clone command + start command for taking
+          this twin off the simulator and onto a real local brainstem.
+     ════════════════════════════════════════════════════════════════════ -->
+<style>
+  #wah-summon-banner {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 99999;
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+    color: #c9d1d9; padding: 10px 16px; border-bottom: 1px solid #30363d;
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    box-shadow: 0 2px 12px rgba(0,0,0,.35);
+  }
+  #wah-summon-banner.error { background: #3b1d1d; }
+  #wah-summon-banner .name { font-weight: 600; color: #fff; }
+  #wah-summon-banner .role { color: #58a6ff; font-size: 12px; }
+  #wah-summon-banner .role.operator { color: #3fb950; }
+  #wah-summon-banner .meta { color: #8b949e; font-size: 12px; }
+  #wah-summon-banner .close {
+    margin-left: auto; cursor: pointer; color: #8b949e;
+    background: none; border: 0; font-size: 18px; padding: 0 4px;
+  }
+  #wah-summon-banner .close:hover { color: #fff; }
+  #wah-hatch-btn {
+    position: fixed; bottom: 16px; right: 16px; z-index: 99998;
+    background: #58a6ff; color: #fff; border: 0;
+    padding: 10px 16px; border-radius: 999px; cursor: pointer;
+    font: 600 13px -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  }
+  #wah-hatch-btn:hover { background: #4493f8; }
+  #wah-hatch-modal {
+    position: fixed; inset: 0; z-index: 99997;
+    background: rgba(0,0,0,.7); display: none;
+    align-items: center; justify-content: center; padding: 24px;
+  }
+  #wah-hatch-modal.open { display: flex; }
+  #wah-hatch-modal .panel {
+    background: #161b22; color: #c9d1d9; border: 1px solid #30363d;
+    border-radius: 12px; max-width: 600px; width: 100%; padding: 24px 28px;
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    max-height: 85vh; overflow-y: auto;
+  }
+  #wah-hatch-modal h3 { margin: 0 0 8px; font-size: 1.2rem; color: #fff; }
+  #wah-hatch-modal h4 { margin: 20px 0 4px; font-size: 0.85rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; }
+  #wah-hatch-modal pre {
+    background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+    padding: 12px; overflow-x: auto; font-size: 12px; line-height: 1.5;
+    margin: 0; cursor: pointer; position: relative;
+  }
+  #wah-hatch-modal pre:hover { border-color: #58a6ff; }
+  #wah-hatch-modal pre::after {
+    content: "tap to copy"; position: absolute; top: 6px; right: 8px;
+    font-size: 10px; color: #8b949e; opacity: 0.6;
+  }
+  #wah-hatch-modal pre.copied::after { content: "✓ copied"; color: #3fb950; opacity: 1; }
+  #wah-hatch-modal .close-x {
+    float: right; cursor: pointer; background: none; border: 0; color: #8b949e;
+    font-size: 22px; padding: 0; line-height: 1;
+  }
+  #wah-hatch-modal p { margin: 8px 0; }
+  #wah-hatch-modal a { color: #58a6ff; }
+</style>
+
+<div id="wah-hatch-modal" role="dialog" aria-labelledby="wah-hatch-title">
+  <div class="panel">
+    <button class="close-x" onclick="document.getElementById('wah-hatch-modal').classList.remove('open')" aria-label="Close">×</button>
+    <h3 id="wah-hatch-title">Hatch this twin on your device</h3>
+    <p>The simulator is one face of the twin. Hatching gives you a real, persistent organism on your machine — your own kernel running, accumulating memory, reachable at <code>localhost:7071</code>.</p>
+    <h4>Step 1 — Install the brainstem</h4>
+    <pre onclick="wahCopy(this)">curl -fsSL https://kody-w.github.io/RAPP/installer/install.sh | bash</pre>
+    <h4>Step 2 — Clone this twin's content</h4>
+    <pre onclick="wahCopy(this)" id="wah-hatch-clone">git clone https://github.com/kody-w/wildhaven-ai-homes-twin.git ~/wah-twin</pre>
+    <h4>Step 3 — Start the brainstem against this twin</h4>
+    <pre onclick="wahCopy(this)" id="wah-hatch-start">SOUL_PATH=~/wah-twin/soul.md AGENTS_PATH=~/wah-twin/agents ~/.brainstem/start.sh</pre>
+    <h4>Step 4 — (Optional) Install the device-side PWA</h4>
+    <p style="font-size: 13px;">For a phone home-screen icon and a chat UI distinct from this simulator, open <a href="app/">the device-side app</a> in your phone browser, then tap "Add to Home Screen" (iOS Safari) or "Install app" (Chrome).</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  function parseSummon() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get('summon');
+      if (!ref || !/^[\w.-]+\/[\w.-]+$/.test(ref)) return null;
+      return ref;
+    } catch(e) { return null; }
+  }
+
+  function rawUrl(ownerRepo, path) {
+    return `https://raw.githubusercontent.com/${ownerRepo}/main/${path}`;
+  }
+
+  async function fetchPublic(url) {
+    try {
+      const r = await fetch(url, {cache: 'no-store'});
+      if (!r.ok) return null;
+      return await r.text();
+    } catch(e) { return null; }
+  }
+
+  function showBanner(parsed, status) {
+    const existing = document.getElementById('wah-summon-banner');
+    if (existing) existing.remove();
+    const banner = document.createElement('div');
+    banner.id = 'wah-summon-banner';
+    if (status === 'error') banner.classList.add('error');
+    banner.innerHTML = (
+      `<span class="name">${parsed.name || parsed.repo || 'twin'}</span>` +
+      `<span class="role ${parsed.operator ? 'operator' : ''}">` +
+        (parsed.operator ? '🔒 operator view' : 'public view') +
+      `</span>` +
+      (parsed.kind ? `<span class="meta">${parsed.kind}</span>` : '') +
+      (parsed.parent ? `<span class="meta">parent ${String(parsed.parent).slice(0,8)}…</span>` : '') +
+      `<button class="close" onclick="this.parentNode.remove()" aria-label="Dismiss">×</button>`
+    );
+    document.body.insertBefore(banner, document.body.firstChild);
+  }
+
+  async function summon() {
+    const ref = parseSummon();
+    if (!ref) return;
+
+    let rappidJson = null;
+    const txt = await fetchPublic(rawUrl(ref, 'rappid.json'));
+    if (txt) {
+      try { rappidJson = JSON.parse(txt); } catch(e) {}
+    }
+
+    if (!rappidJson) {
+      window.WAH_SUMMON = {ref, error: 'rappid.json not reachable (404 or invalid)'};
+      showBanner({repo: ref}, 'error');
+      return;
+    }
+
+    const soulTxt = await fetchPublic(rawUrl(ref, 'soul.md'));
+
+    window.WAH_SUMMON = {
+      ref,
+      rappid: rappidJson.rappid,
+      parent: rappidJson.parent_rappid,
+      name: rappidJson.name,
+      kind: rappidJson.kind,
+      role: rappidJson.role,
+      soul: soulTxt,
+      privateCompanion: rappidJson.private_companion || null,
+      // Browser JS can't reliably probe private-repo access without an
+      // explicit token; the device-side app handles authenticated escalation.
+      operatorAccess: 'unknown',
+    };
+
+    showBanner({
+      name: rappidJson.name,
+      kind: rappidJson.kind,
+      parent: rappidJson.parent_rappid,
+      operator: false,
+    }, 'ok');
+
+    // Repoint the hatch modal's clone/start commands at the summoned twin
+    try {
+      const cloneEl = document.getElementById('wah-hatch-clone');
+      const startEl = document.getElementById('wah-hatch-start');
+      const repoBase = `https://github.com/${ref}.git`;
+      const dirName = (ref.split('/')[1] || 'twin').replace(/[^\w.-]/g, '_');
+      if (cloneEl) cloneEl.textContent = `git clone ${repoBase} ~/${dirName}`;
+      if (startEl) startEl.textContent = `SOUL_PATH=~/${dirName}/soul.md AGENTS_PATH=~/${dirName}/agents ~/.brainstem/start.sh`;
+    } catch(e) {}
+  }
+
+  function installHatchButton() {
+    if (document.getElementById('wah-hatch-btn')) return;
+    const btn = document.createElement('button');
+    btn.id = 'wah-hatch-btn';
+    btn.type = 'button';
+    btn.textContent = 'Hatch on device →';
+    btn.title = 'Pull this twin out of the simulator and onto your machine';
+    btn.onclick = () => document.getElementById('wah-hatch-modal').classList.add('open');
+    document.body.appendChild(btn);
+  }
+
+  window.wahCopy = function(el) {
+    try {
+      navigator.clipboard.writeText(el.textContent).then(() => {
+        el.classList.add('copied');
+        setTimeout(() => el.classList.remove('copied'), 1600);
+      });
+    } catch(e) {
+      const r = document.createRange();
+      r.selectNode(el);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(r);
+    }
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => { summon(); installHatchButton(); });
+  } else {
+    summon();
+    installHatchButton();
+  }
+})();
+</script>
+
 </body>
 </html>
