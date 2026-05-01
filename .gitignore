@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Brainstem state — runtime, not source
+.brainstem_data/
+.copilot_token
+.copilot_session
+.copilot_pending
+.brainstem_book.json
+voice.zip
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp

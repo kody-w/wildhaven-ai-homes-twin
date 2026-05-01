@@ -1,0 +1,14 @@
+{
+  "schema": "rapp-rappid/1.1",
+  "rappid": "37ad22f5-ed6d-48b1-b8b4-61019f58a42b",
+  "parent_rappid": "0b635450-c042-49fb-b4b1-bdb571044dec",
+  "parent_repo": "https://github.com/kody-w/RAPP.git",
+  "parent_commit": "5c98e6625bce3b5274931483541b311d92c1b477",
+  "born_at": "2026-05-01T00:00:00Z",
+  "name": "wildhaven-ai-homes-twin",
+  "role": "variant",
+  "kind": "pre-founder-twin",
+  "description": "The Pre-Founder twin of Wildhaven AI Homes. The brand operates in public, in this repo, before the team incorporates. Built on the RAPP digital-organism platform; descended from kody-w/RAPP via the rappid lineage chain.",
+  "attestation": null,
+  "_attestation_note": "When kody-w/RAPP adopts release signing, this variant's attestation will be issued by rapp's release key asserting (parent_rappid, parent_commit, child_rappid). See pages/vault/Architecture/Signed Releases and Variant Attestation.md in the parent repo."
+}
