@@ -195,13 +195,18 @@ long-form vision.
 
 ## Summoning
 
-The summon URL for this variant (update the QR in `summon.svg` to match):
+This variant carries its own copy of the vBrainstem at `vbrainstem.html` —
+the URL surface is sovereign to this repo, not dependent on the upstream's
+hosting. After enabling GitHub Pages on this repo (Settings → Pages →
+Source: main / root), your summon URL is:
 
 ```
-https://kody-w.github.io/RAPP/rapp_brainstem/utils/web/index.html?summon=<owner>/<repo>
+https://<your-username>.github.io/<this-repo-name>/vbrainstem.html
 ```
 
-See [SUMMON.md](./SUMMON.md) for the full convention.
+Regenerate `summon.svg` with that URL. See [SUMMON.md](./SUMMON.md) for
+the full convention and the `?summon=` parameter that lets the same
+vBrainstem load other variants for cross-twin browsing.
 
 ## Spawning further variants
 
@@ -267,10 +272,18 @@ echo " Variant initialized."
 echo "──────────────────────────────────────────────────────────────────────"
 echo ""
 if [ -n "$GH_OWNER_REPO" ]; then
-    echo " Your summon URL:"
-    echo "   https://kody-w.github.io/RAPP/rapp_brainstem/utils/web/index.html?summon=$GH_OWNER_REPO"
+    GH_OWNER="${GH_OWNER_REPO%%/*}"
+    GH_REPO="${GH_OWNER_REPO##*/}"
+    echo " Your sovereign vBrainstem URL (after enabling GitHub Pages on this repo):"
+    echo "   https://${GH_OWNER}.github.io/${GH_REPO}/vbrainstem.html"
     echo ""
-    echo " Regenerate your QR (summon.svg) with that URL — see SUMMON.md."
+    echo " That URL hosts a copy of the simulator inside YOUR repo — your variant's"
+    echo " URL surface does not depend on the upstream's hosting. Regenerate your QR"
+    echo " (summon.svg) with that URL — see SUMMON.md for the snippet."
+    echo ""
+    echo " To enable GitHub Pages from main / root:"
+    echo "   gh api -X POST repos/${GH_OWNER}/${GH_REPO}/pages \\"
+    echo "     -f 'source[branch]=main' -f 'source[path]=/'"
 else
     echo " (Could not detect your repo's GitHub remote. Set 'origin' to your"
     echo "  GitHub repo URL and update SUMMON.md / summon.svg manually.)"

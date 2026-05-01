@@ -9,14 +9,14 @@ A "summon" is the act of pulling this twin into a runtime so you can talk to it.
 This is the canonical address for summoning this twin:
 
 ```
-https://kody-w.github.io/RAPP/rapp_brainstem/utils/web/index.html?summon=kody-w/wildhaven-ai-homes-twin
+https://kody-w.github.io/wildhaven-ai-homes-twin/vbrainstem.html?summon=kody-w/wildhaven-ai-homes-twin
 ```
 
 The QR code in [`summon.svg`](./summon.svg) encodes it. Scan it from any phone camera or QR app and your browser opens the vBrainstem with the twin auto-loading.
 
 ## What the URL means
 
-The vBrainstem (`utils/web/index.html` in [kody-w/RAPP](https://github.com/kody-w/RAPP)) is a self-contained, browser-side simulator with a Pyodide sandbox and an in-browser agent runtime. It is hosted at `kody-w.github.io/RAPP/...` via GitHub Pages — no install, no auth required to load it.
+The vBrainstem (`vbrainstem.html` at this repo's root) is a self-contained, browser-side simulator with a Pyodide sandbox and an in-browser agent runtime. It is hosted at `kody-w.github.io/wildhaven-ai-homes-twin/` via this repo's own GitHub Pages — no install, no auth required to load it. The simulator was originally inherited from [kody-w/RAPP](https://github.com/kody-w/RAPP) and now lives here as a sovereign copy, so the twin's URL surface does not depend on the upstream's hosting.
 
 When the vBrainstem loads with `?summon=<owner>/<repo>`, it knows to fetch that twin's content (rappid.json → soul.md → agents/ → body_functions/) and boot it in the simulator. The convention:
 
@@ -71,7 +71,7 @@ To regenerate the QR (e.g., after a rename), run:
 import qrcode
 from qrcode.image.svg import SvgPathImage
 
-URL = "https://kody-w.github.io/RAPP/rapp_brainstem/utils/web/index.html?summon=kody-w/wildhaven-ai-homes-twin"
+URL = "https://kody-w.github.io/wildhaven-ai-homes-twin/vbrainstem.html?summon=kody-w/wildhaven-ai-homes-twin"
 qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=10, border=2)
 qr.add_data(URL)
 qr.make(fit=True)
