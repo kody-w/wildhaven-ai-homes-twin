@@ -74,9 +74,30 @@ Or, when the future `hatchling lay-egg` capability ships in the upstream, a sing
 │   ├── pitch_agent.py             — refines the pitch for investors
 │   └── customer_inquiry_agent.py  — responds to interest from prospective customers
 └── utils/
+    ├── private_layer.py            — bridge to the private companion repo (auth-gated)
     └── body_functions/
         └── manifest_body_function.py  — serves /api/manifest/* (vision + contact + status)
 ```
+
+## The private layer (operator-only)
+
+The Pre-Founder twin has a **private companion repo** at [`kody-w/wildhaven-ai-homes-twin-private`](https://github.com/kody-w/wildhaven-ai-homes-twin-private) that holds operational state the twin uses to reason but never publishes (real pipeline, financial model, hiring targets, founder notes, research). The pointer to it lives in [`rappid.json`](./rappid.json) under `private_companion`.
+
+**Two access paths**, both supported by [`utils/private_layer.py`](./utils/private_layer.py):
+
+1. **Local clone** — fast, offline-capable, zero-network. From inside this working dir:
+   ```bash
+   git clone git@github.com:kody-w/wildhaven-ai-homes-twin-private.git .private
+   ```
+   `.private/` is gitignored so the clone never leaks into commits.
+
+2. **Authenticated remote fetch** — no clone required. Files are fetched via authenticated HTTPS from the private repo's `raw.githubusercontent.com` URLs. **Anonymous requests return 404; authenticated requests with a token that has `repo` scope return the real content.** Token resolution order: `WAH_PRIVATE_TOKEN` env > `GITHUB_TOKEN` env > `gh auth token` CLI subprocess.
+
+The `private_context` agent uses this layer to inform every chat turn when either path is available — and the twin's `soul.md` constrains the LLM to never quote private content verbatim in public-facing output. **No private content is ever served via HTTP from this twin.** The only thing that leaves the brainstem process is an agent's transformed, public-safe summary.
+
+Privacy boundary verified:
+- `curl https://raw.githubusercontent.com/kody-w/wildhaven-ai-homes-twin-private/main/operational/pipeline.json` → 404 (anonymous)
+- `curl -H "Authorization: token $(gh auth token)" ...` → 200 (operator)
 
 ## What this repo is NOT
 

@@ -3,6 +3,11 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Private layer — operator's clone of the private companion repo.
+# CRITICAL: this directory is private operational state. Anything
+# accidentally added here would leak when the public twin is pushed.
+.private/
+
 # Brainstem state — runtime, not source
 .brainstem_data/
 .copilot_token
