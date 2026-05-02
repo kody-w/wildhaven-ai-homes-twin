@@ -6660,17 +6660,48 @@ async function onPwaInstalled() {
 <div id="wah-pat-modal" role="dialog" aria-labelledby="wah-pat-title">
   <div class="panel">
     <h3 id="wah-pat-title">Sign in as operator</h3>
-    <p style="margin: 8px 0 12px; color: #8b949e;">
-      Paste a GitHub Personal Access Token with <code>repo</code> scope to unlock the private companion layer for this twin. Your token is stored only in this tab's <code>sessionStorage</code> — it's gone when you close the tab.
-    </p>
-    <p style="margin: 8px 0; font-size: 12px; color: #8b949e;">
-      Don't have one? Run <code>gh auth token</code> on a machine where you're logged in to GitHub, or generate a fine-grained PAT at <a href="https://github.com/settings/tokens" target="_blank" rel="noopener" style="color: #58a6ff;">github.com/settings/tokens</a>.
-    </p>
-    <textarea id="wah-pat-input" placeholder="ghp_… or ghu_…" autocomplete="off" spellcheck="false"></textarea>
-    <div id="wah-pat-result"></div>
-    <div class="actions">
-      <button class="secondary" type="button" onclick="document.getElementById('wah-pat-modal').classList.remove('open')">Cancel</button>
-      <button type="button" id="wah-pat-submit">Unlock private layer</button>
+
+    <!-- Device-flow primary path -->
+    <div id="wah-auth-device-pane">
+      <p style="margin: 8px 0 12px; color: #8b949e;">
+        Sign in with GitHub to unlock this twin's private companion layer. The auth flow runs through the dedicated <a href="https://github.com/kody-w/RAPP/tree/main/worker" target="_blank" rel="noopener" style="color: #58a6ff;">RAPP auth worker</a> — no PAT pasting, no client secret in the browser. The resulting token is held only in this tab's <code>sessionStorage</code>, gone when you close the tab.
+      </p>
+      <div id="wah-auth-step1">
+        <div class="actions" style="margin-top: 0;">
+          <button class="secondary" type="button" onclick="document.getElementById('wah-pat-modal').classList.remove('open')">Cancel</button>
+          <button type="button" id="wah-auth-start">Sign in with GitHub →</button>
+        </div>
+        <p style="margin: 16px 0 0; font-size: 12px; color: #8b949e;">
+          Or <a id="wah-pat-toggle" style="color: #58a6ff; cursor: pointer;">paste a PAT manually</a> (advanced).
+        </p>
+      </div>
+      <div id="wah-auth-step2" style="display:none;">
+        <p style="margin: 8px 0 4px; color: #c9d1d9;">1. Open this URL in any browser:</p>
+        <pre onclick="wahCopy(this)" style="background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 10px; margin: 0 0 12px; font: 12px ui-monospace,SFMono-Regular,monospace; cursor: pointer;" id="wah-auth-uri"></pre>
+        <p style="margin: 0 0 4px; color: #c9d1d9;">2. Enter this code:</p>
+        <pre onclick="wahCopy(this)" style="background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; margin: 0 0 12px; font: 600 18px/1.2 ui-monospace,SFMono-Regular,monospace; letter-spacing: 0.15em; text-align: center; color: #58a6ff; cursor: pointer;" id="wah-auth-code"></pre>
+        <p style="margin: 0; color: #8b949e; font-size: 12px;">3. Authorize the <code>repo</code> + <code>read:user</code> scopes when prompted.</p>
+        <div id="wah-auth-poll-status" style="margin: 12px 0 0; font-size: 12px; color: #8b949e;">⏱ waiting for authorization…</div>
+        <div class="actions">
+          <button class="secondary" type="button" id="wah-auth-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAT-paste fallback pane -->
+    <div id="wah-auth-pat-pane" style="display:none;">
+      <p style="margin: 8px 0 12px; color: #8b949e;">
+        Paste a GitHub PAT with <code>repo</code> scope. Stored only in this tab's <code>sessionStorage</code>.
+      </p>
+      <p style="margin: 8px 0; font-size: 12px; color: #8b949e;">
+        Generate one with <code>gh auth token</code> on a logged-in machine, or at <a href="https://github.com/settings/tokens" target="_blank" rel="noopener" style="color: #58a6ff;">github.com/settings/tokens</a>.
+      </p>
+      <textarea id="wah-pat-input" placeholder="ghp_… or ghu_…" autocomplete="off" spellcheck="false"></textarea>
+      <div id="wah-pat-result"></div>
+      <div class="actions">
+        <button class="secondary" type="button" id="wah-pat-back">← back</button>
+        <button type="button" id="wah-pat-submit">Unlock private layer</button>
+      </div>
     </div>
   </div>
 </div>
@@ -6936,18 +6967,132 @@ async function onPwaInstalled() {
     setTimeout(() => setPyodideStatus(''), 4000);
   }
 
-  // ── PAT input handling ──────────────────────────────────────────────
+  // ── Auth via the existing RAPP auth worker (device-code OAuth) ──────
+  // Reuses the deployed worker + OAuth App from the upstream vBrainstem,
+  // so we don't ship a new client secret in the browser. The worker is
+  // stateless — see kody-w/RAPP/worker/README.md for the contract.
+  // We request `read:user repo` so the resulting token unlocks private-
+  // repo reads (the twin's private companion).
+  const WAH_AUTH_WORKER_URL = (typeof AUTH_WORKER_URL === 'string' && AUTH_WORKER_URL)
+    ? AUTH_WORKER_URL
+    : 'https://rapp-auth.kwildfeuer.workers.dev';
+  const WAH_AUTH_CLIENT_ID = (typeof AUTH_CLIENT_ID === 'string' && AUTH_CLIENT_ID)
+    ? AUTH_CLIENT_ID
+    : 'Ov23liXWPqaiWnxt9cLz';
+  const WAH_AUTH_SCOPE = 'read:user repo';
+
+  let _devicePollHandle = null;
+
+  async function startOAuthDeviceFlow() {
+    const startBtn = document.getElementById('wah-auth-start');
+    const step1 = document.getElementById('wah-auth-step1');
+    const step2 = document.getElementById('wah-auth-step2');
+    const uriEl = document.getElementById('wah-auth-uri');
+    const codeEl = document.getElementById('wah-auth-code');
+    const statusEl = document.getElementById('wah-auth-poll-status');
+    if (startBtn) startBtn.disabled = true;
+    statusEl.textContent = '⏱ requesting device code…';
+    statusEl.style.color = '#8b949e';
+
+    let dev;
+    try {
+      const r = await fetch(WAH_AUTH_WORKER_URL + '/api/auth/device', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({client_id: WAH_AUTH_CLIENT_ID, scope: WAH_AUTH_SCOPE}),
+      });
+      if (!r.ok) throw new Error(`worker /api/auth/device returned ${r.status}`);
+      dev = await r.json();
+      if (!dev.user_code || !dev.device_code) throw new Error('worker did not return a device code');
+    } catch(e) {
+      statusEl.textContent = '✗ ' + e.message + ' — try the manual PAT path.';
+      statusEl.style.color = '#f85149';
+      if (startBtn) startBtn.disabled = false;
+      return;
+    }
+
+    uriEl.textContent = dev.verification_uri || 'https://github.com/login/device';
+    codeEl.textContent = (dev.user_code || '').replace(/(.{4})(.{4})/, '$1-$2');
+    step1.style.display = 'none';
+    step2.style.display = '';
+    statusEl.textContent = '⏱ waiting for authorization…';
+    statusEl.style.color = '#8b949e';
+
+    const startedAt = Date.now();
+    const expiresInMs = (dev.expires_in || 900) * 1000;
+    const intervalMs = (dev.interval || 5) * 1000;
+
+    const cancelBtn = document.getElementById('wah-auth-cancel');
+    let cancelled = false;
+    cancelBtn.onclick = () => {
+      cancelled = true;
+      if (_devicePollHandle) { clearTimeout(_devicePollHandle); _devicePollHandle = null; }
+      step1.style.display = '';
+      step2.style.display = 'none';
+      if (startBtn) startBtn.disabled = false;
+    };
+
+    async function poll() {
+      if (cancelled) return;
+      if (Date.now() - startedAt > expiresInMs) {
+        statusEl.textContent = '✗ code expired. Cancel and try again.';
+        statusEl.style.color = '#f85149';
+        return;
+      }
+      try {
+        const r = await fetch(WAH_AUTH_WORKER_URL + '/api/auth/device/poll', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({device_code: dev.device_code, client_id: WAH_AUTH_CLIENT_ID}),
+        });
+        const d = await r.json();
+        if (d.access_token) {
+          statusEl.textContent = '✓ authorized — reloading…';
+          statusEl.style.color = '#3fb950';
+          setPat(d.access_token);
+          setTimeout(() => window.location.reload(), 600);
+          return;
+        }
+        if (d.error === 'authorization_pending') {
+          // keep polling at the announced interval
+        } else if (d.error === 'slow_down') {
+          // GitHub asked us to back off a bit
+          _devicePollHandle = setTimeout(poll, intervalMs + 5000);
+          return;
+        } else if (d.error) {
+          statusEl.textContent = '✗ ' + d.error + ' — cancel and try again.';
+          statusEl.style.color = '#f85149';
+          return;
+        }
+      } catch(e) {
+        // transient — keep polling
+      }
+      _devicePollHandle = setTimeout(poll, intervalMs);
+    }
+    _devicePollHandle = setTimeout(poll, intervalMs);
+  }
+
+  // ── PAT input handling (fallback) ───────────────────────────────────
   function attachPatHandlers() {
     const submit = document.getElementById('wah-pat-submit');
     const input = document.getElementById('wah-pat-input');
     const result = document.getElementById('wah-pat-result');
+    const startBtn = document.getElementById('wah-auth-start');
+    const toggle = document.getElementById('wah-pat-toggle');
+    const back = document.getElementById('wah-pat-back');
+    const devicePane = document.getElementById('wah-auth-device-pane');
+    const patPane = document.getElementById('wah-auth-pat-pane');
+
+    if (startBtn) startBtn.onclick = startOAuthDeviceFlow;
+    if (toggle) toggle.onclick = () => { devicePane.style.display = 'none'; patPane.style.display = ''; };
+    if (back) back.onclick = () => { patPane.style.display = 'none'; devicePane.style.display = ''; };
+
     if (!submit) return;
     submit.onclick = async () => {
       const pat = (input.value || '').trim();
       result.className = '';
       result.textContent = '';
       if (!pat) { result.className = 'err'; result.textContent = 'Paste a token.'; return; }
-      // Validate by fetching user info
       try {
         const r = await fetch('https://api.github.com/user', {
           headers: {Authorization: `token ${pat}`, Accept: 'application/vnd.github+json'},
