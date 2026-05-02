@@ -6608,7 +6608,74 @@ async function onPwaInstalled() {
   }
   #wah-hatch-modal p { margin: 8px 0; }
   #wah-hatch-modal a { color: #58a6ff; }
+  #wah-summon-banner .auth-link {
+    color: #58a6ff; cursor: pointer; text-decoration: underline; font-size: 12px;
+  }
+  #wah-summon-banner .auth-link:hover { color: #79b8ff; }
+  #wah-pat-modal {
+    position: fixed; inset: 0; z-index: 99996;
+    background: rgba(0,0,0,.7); display: none;
+    align-items: center; justify-content: center; padding: 24px;
+  }
+  #wah-pat-modal.open { display: flex; }
+  #wah-pat-modal .panel {
+    background: #161b22; color: #c9d1d9; border: 1px solid #30363d;
+    border-radius: 12px; max-width: 520px; width: 100%; padding: 24px 28px;
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  }
+  #wah-pat-modal h3 { margin: 0 0 8px; font-size: 1.15rem; color: #fff; }
+  #wah-pat-modal textarea {
+    width: 100%; min-height: 90px; background: #0d1117; color: #c9d1d9;
+    border: 1px solid #30363d; border-radius: 6px; padding: 10px;
+    font: 12px/1.4 ui-monospace, SFMono-Regular, monospace;
+    resize: vertical; box-sizing: border-box;
+  }
+  #wah-pat-modal textarea:focus { outline: none; border-color: #58a6ff; }
+  #wah-pat-modal .actions {
+    display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end;
+  }
+  #wah-pat-modal button {
+    background: #58a6ff; color: #fff; border: 0; padding: 8px 14px;
+    border-radius: 6px; cursor: pointer; font: 600 13px inherit;
+  }
+  #wah-pat-modal button.secondary {
+    background: transparent; color: #c9d1d9; border: 1px solid #30363d;
+  }
+  #wah-pat-modal #wah-pat-result {
+    margin-top: 8px; font-size: 12px; color: #8b949e;
+  }
+  #wah-pat-modal #wah-pat-result.ok { color: #3fb950; }
+  #wah-pat-modal #wah-pat-result.err { color: #f85149; }
+  #wah-pyodide-status {
+    position: fixed; bottom: 64px; right: 16px; z-index: 99997;
+    background: #161b22; color: #8b949e; border: 1px solid #30363d;
+    border-radius: 6px; padding: 6px 10px;
+    font: 11px ui-monospace, SFMono-Regular, monospace;
+    display: none; max-width: 320px;
+  }
+  #wah-pyodide-status.show { display: block; }
+  #wah-pyodide-status.ok { color: #3fb950; }
 </style>
+
+<div id="wah-pat-modal" role="dialog" aria-labelledby="wah-pat-title">
+  <div class="panel">
+    <h3 id="wah-pat-title">Sign in as operator</h3>
+    <p style="margin: 8px 0 12px; color: #8b949e;">
+      Paste a GitHub Personal Access Token with <code>repo</code> scope to unlock the private companion layer for this twin. Your token is stored only in this tab's <code>sessionStorage</code> — it's gone when you close the tab.
+    </p>
+    <p style="margin: 8px 0; font-size: 12px; color: #8b949e;">
+      Don't have one? Run <code>gh auth token</code> on a machine where you're logged in to GitHub, or generate a fine-grained PAT at <a href="https://github.com/settings/tokens" target="_blank" rel="noopener" style="color: #58a6ff;">github.com/settings/tokens</a>.
+    </p>
+    <textarea id="wah-pat-input" placeholder="ghp_… or ghu_…" autocomplete="off" spellcheck="false"></textarea>
+    <div id="wah-pat-result"></div>
+    <div class="actions">
+      <button class="secondary" type="button" onclick="document.getElementById('wah-pat-modal').classList.remove('open')">Cancel</button>
+      <button type="button" id="wah-pat-submit">Unlock private layer</button>
+    </div>
+  </div>
+</div>
+
+<div id="wah-pyodide-status" title="vBrainstem Pyodide runtime status"></div>
 
 <div id="wah-hatch-modal" role="dialog" aria-labelledby="wah-hatch-title">
   <div class="panel">
@@ -6628,6 +6695,7 @@ async function onPwaInstalled() {
 
 <script>
 (function(){
+  // ── URL + summon parsing ──────────────────────────────────────────────
   function parseSummon() {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -6637,53 +6705,124 @@ async function onPwaInstalled() {
     } catch(e) { return null; }
   }
 
-  function rawUrl(ownerRepo, path) {
-    return `https://raw.githubusercontent.com/${ownerRepo}/main/${path}`;
+  function rawUrl(ownerRepo, path, ref) {
+    return `https://raw.githubusercontent.com/${ownerRepo}/${ref || 'main'}/${path}`;
   }
 
-  async function fetchPublic(url) {
+  function getPat() {
+    try { return sessionStorage.getItem('WAH_PAT') || null; } catch(e) { return null; }
+  }
+  function setPat(pat) {
     try {
-      const r = await fetch(url, {cache: 'no-store'});
+      if (pat) sessionStorage.setItem('WAH_PAT', pat);
+      else sessionStorage.removeItem('WAH_PAT');
+    } catch(e) {}
+  }
+
+  function authHeaders(extra) {
+    const h = Object.assign({}, extra || {});
+    const pat = getPat();
+    if (pat) h.Authorization = `token ${pat}`;
+    return h;
+  }
+
+  async function fetchText(url, withAuth) {
+    try {
+      const opts = {cache: 'no-store'};
+      if (withAuth) opts.headers = authHeaders();
+      const r = await fetch(url, opts);
       if (!r.ok) return null;
       return await r.text();
     } catch(e) { return null; }
   }
 
+  async function fetchJson(url, withAuth) {
+    const t = await fetchText(url, withAuth);
+    if (t == null) return null;
+    try { return JSON.parse(t); } catch(e) { return null; }
+  }
+
+  // ── Banner UI ────────────────────────────────────────────────────────
   function showBanner(parsed, status) {
     const existing = document.getElementById('wah-summon-banner');
     if (existing) existing.remove();
     const banner = document.createElement('div');
     banner.id = 'wah-summon-banner';
     if (status === 'error') banner.classList.add('error');
+    const operator = parsed.operator;
     banner.innerHTML = (
-      `<span class="name">${parsed.name || parsed.repo || 'twin'}</span>` +
-      `<span class="role ${parsed.operator ? 'operator' : ''}">` +
-        (parsed.operator ? '🔒 operator view' : 'public view') +
+      `<span class="name">${escapeHtml(parsed.name || parsed.repo || 'twin')}</span>` +
+      `<span class="role ${operator ? 'operator' : ''}">` +
+        (operator ? '🔒 operator view' : 'public view') +
       `</span>` +
-      (parsed.kind ? `<span class="meta">${parsed.kind}</span>` : '') +
+      (parsed.kind ? `<span class="meta">${escapeHtml(parsed.kind)}</span>` : '') +
       (parsed.parent ? `<span class="meta">parent ${String(parsed.parent).slice(0,8)}…</span>` : '') +
+      (parsed.privateAvailable && !operator
+        ? `<span class="auth-link" id="wah-auth-link">Sign in as operator</span>`
+        : '') +
+      (operator
+        ? `<span class="auth-link" id="wah-auth-link" title="Clear stored token">Sign out</span>`
+        : '') +
       `<button class="close" onclick="this.parentNode.remove()" aria-label="Dismiss">×</button>`
     );
     document.body.insertBefore(banner, document.body.firstChild);
+    const auth = document.getElementById('wah-auth-link');
+    if (auth) auth.onclick = () => {
+      if (operator) { setPat(null); window.location.reload(); }
+      else { document.getElementById('wah-pat-modal').classList.add('open'); document.getElementById('wah-pat-input').focus(); }
+    };
   }
 
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function setPyodideStatus(text, ok) {
+    const el = document.getElementById('wah-pyodide-status');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.add('show');
+    if (ok) el.classList.add('ok');
+    if (!text) el.classList.remove('show');
+  }
+
+  // ── Private companion access (with PAT) ──────────────────────────────
+  function privateRepoFromUrl(repoUrl) {
+    if (!repoUrl) return null;
+    const m = String(repoUrl).match(/github\.com[:/]([\w.-]+\/[\w.-]+?)(?:\.git)?$/);
+    return m ? m[1] : null;
+  }
+
+  async function probePrivateAccess(privateRef) {
+    if (!privateRef || !getPat()) return false;
+    const url = rawUrl(privateRef, 'README.md');
+    const r = await fetchText(url, true);
+    return r !== null;
+  }
+
+  // ── Summon orchestrator ──────────────────────────────────────────────
   async function summon() {
     const ref = parseSummon();
     if (!ref) return;
 
-    let rappidJson = null;
-    const txt = await fetchPublic(rawUrl(ref, 'rappid.json'));
-    if (txt) {
-      try { rappidJson = JSON.parse(txt); } catch(e) {}
-    }
-
+    const rappidJson = await fetchJson(rawUrl(ref, 'rappid.json'));
     if (!rappidJson) {
       window.WAH_SUMMON = {ref, error: 'rappid.json not reachable (404 or invalid)'};
       showBanner({repo: ref}, 'error');
       return;
     }
 
-    const soulTxt = await fetchPublic(rawUrl(ref, 'soul.md'));
+    const [soulTxt, agentList] = await Promise.all([
+      fetchText(rawUrl(ref, 'soul.md')),
+      // agents/ contents listing — public if repo is public; uses PAT if set
+      fetchJson(`https://api.github.com/repos/${ref}/contents/agents?ref=main`, true),
+    ]);
+
+    const privateCompanion = rappidJson.private_companion || null;
+    const privateRef = privateCompanion ? privateRepoFromUrl(privateCompanion.repo) : null;
+    const operator = privateRef ? await probePrivateAccess(privateRef) : false;
 
     window.WAH_SUMMON = {
       ref,
@@ -6693,17 +6832,18 @@ async function onPwaInstalled() {
       kind: rappidJson.kind,
       role: rappidJson.role,
       soul: soulTxt,
-      privateCompanion: rappidJson.private_companion || null,
-      // Browser JS can't reliably probe private-repo access without an
-      // explicit token; the device-side app handles authenticated escalation.
-      operatorAccess: 'unknown',
+      agents: Array.isArray(agentList) ? agentList.filter(a => a.type === 'file' && /_agent\.py$/.test(a.name)) : [],
+      privateCompanion,
+      privateRef,
+      operatorAccess: operator ? 'authenticated' : (privateCompanion ? 'available-not-signed-in' : 'no-private-layer'),
     };
 
     showBanner({
       name: rappidJson.name,
       kind: rappidJson.kind,
       parent: rappidJson.parent_rappid,
-      operator: false,
+      operator: operator,
+      privateAvailable: !!privateCompanion,
     }, 'ok');
 
     // Repoint the hatch modal's clone/start commands at the summoned twin
@@ -6715,8 +6855,121 @@ async function onPwaInstalled() {
       if (cloneEl) cloneEl.textContent = `git clone ${repoBase} ~/${dirName}`;
       if (startEl) startEl.textContent = `SOUL_PATH=~/${dirName}/soul.md AGENTS_PATH=~/${dirName}/agents ~/.brainstem/start.sh`;
     } catch(e) {}
+
+    // Wire summoned twin into Pyodide runtime + buildSystemPrompt
+    wrapBuildSystemPrompt();
+    injectIntoPyodideWhenReady();
   }
 
+  // ── Wrap buildSystemPrompt to prepend summoned twin's soul ──────────
+  // Idempotent — calling twice doesn't double-wrap.
+  function wrapBuildSystemPrompt() {
+    if (window.__wahSystemPromptWrapped) return;
+    if (typeof window.buildSystemPrompt !== 'function') {
+      // Try again later; vBrainstem hasn't fully booted yet
+      setTimeout(wrapBuildSystemPrompt, 100);
+      return;
+    }
+    const original = window.buildSystemPrompt;
+    window.buildSystemPrompt = function(toolsXml) {
+      const base = original(toolsXml);
+      const summon = window.WAH_SUMMON;
+      if (!summon || summon.error || !summon.soul) return base;
+      const operatorBlock = (summon.operatorAccess === 'authenticated')
+        ? '\n\n<operator_access status="authenticated">The reader is signed in as an operator with read access to this twin\'s private companion repo. You may reason about private context the operator imports through the private_context agent. NEVER quote private content verbatim in public-facing chat — only use it to inform reasoning. The public output must always be derivable from the soul + manifest alone.</operator_access>'
+        : '';
+      return (
+        `<summoned_twin id="${escapeHtml(summon.rappid || '')}" name="${escapeHtml(summon.name || '')}" kind="${escapeHtml(summon.kind || '')}">\n` +
+        `THE SOUL THAT FOLLOWS IS THE PRIMARY VOICE FOR THIS CONVERSATION. ` +
+        `Override the simulator's default brand persona; speak as this twin. ` +
+        `The simulator's tooling (binder, swarm, memory) remains available, but ` +
+        `the operative identity is the soul below.\n\n` +
+        summon.soul +
+        operatorBlock +
+        `\n</summoned_twin>\n\n` +
+        base
+      );
+    };
+    window.__wahSystemPromptWrapped = true;
+  }
+
+  // ── Inject summoned twin's agents into Pyodide /agents/ ─────────────
+  // Polls for state.pyodide; writes agent files when available.
+  // Idempotent — won't re-inject the same agent twice in one boot.
+  let _injectedAgents = new Set();
+  async function injectIntoPyodideWhenReady() {
+    const summon = window.WAH_SUMMON;
+    if (!summon || summon.error || !summon.agents || !summon.agents.length) return;
+
+    // Wait for Pyodide; vBrainstem boots it lazily on first chat turn,
+    // but we can poll up to ~60s in case the user opens the simulator
+    // without sending a message right away.
+    setPyodideStatus('summon: waiting for Pyodide…');
+    let waited = 0;
+    while (!window.state || !window.state.pyodide) {
+      await new Promise(r => setTimeout(r, 500));
+      waited += 500;
+      if (waited > 60000) {
+        setPyodideStatus('summon: pyodide not ready (idle)', false);
+        return;
+      }
+    }
+
+    setPyodideStatus(`summon: injecting ${summon.agents.length} agent(s)…`);
+    let written = 0, failed = 0;
+    for (const agent of summon.agents) {
+      if (_injectedAgents.has(agent.name)) continue;
+      const url = agent.download_url ||
+                  rawUrl(summon.ref, `agents/${agent.name}`);
+      const src = await fetchText(url, true);  // PAT used if set; harmless on public
+      if (src == null) { failed++; continue; }
+      try {
+        window.state.pyodide.FS.writeFile('/agents/' + agent.name, src);
+        _injectedAgents.add(agent.name);
+        written++;
+      } catch(e) { failed++; }
+    }
+    setPyodideStatus(
+      `summon: ${written} agent(s) injected${failed ? ', '+failed+' failed' : ''}`,
+      written > 0 && failed === 0,
+    );
+    setTimeout(() => setPyodideStatus(''), 4000);
+  }
+
+  // ── PAT input handling ──────────────────────────────────────────────
+  function attachPatHandlers() {
+    const submit = document.getElementById('wah-pat-submit');
+    const input = document.getElementById('wah-pat-input');
+    const result = document.getElementById('wah-pat-result');
+    if (!submit) return;
+    submit.onclick = async () => {
+      const pat = (input.value || '').trim();
+      result.className = '';
+      result.textContent = '';
+      if (!pat) { result.className = 'err'; result.textContent = 'Paste a token.'; return; }
+      // Validate by fetching user info
+      try {
+        const r = await fetch('https://api.github.com/user', {
+          headers: {Authorization: `token ${pat}`, Accept: 'application/vnd.github+json'},
+        });
+        if (!r.ok) {
+          result.className = 'err';
+          result.textContent = `Invalid token (HTTP ${r.status}).`;
+          return;
+        }
+        const user = await r.json();
+        result.className = 'ok';
+        result.textContent = `✓ Authenticated as ${user.login}. Reloading…`;
+        setPat(pat);
+        setTimeout(() => window.location.reload(), 700);
+      } catch(e) {
+        result.className = 'err';
+        result.textContent = 'Network error validating token.';
+      }
+    };
+  }
+
+  // ── Hatch button + clipboard helper (existing) ───────────────────────
   function installHatchButton() {
     if (document.getElementById('wah-hatch-btn')) return;
     const btn = document.createElement('button');
@@ -6742,11 +6995,16 @@ async function onPwaInstalled() {
     }
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => { summon(); installHatchButton(); });
-  } else {
+  function boot() {
     summon();
     installHatchButton();
+    attachPatHandlers();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
   }
 })();
 </script>

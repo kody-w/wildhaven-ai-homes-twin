@@ -111,8 +111,8 @@
 <header>
   <object class="home" data="icon-192.svg" type="image/svg+xml" aria-hidden="true"></object>
   <div class="name">
-    <h1>Wildhaven AI Homes</h1>
-    <div class="sub">on-device twin</div>
+    <h1 id="twin-name">Wildhaven AI Homes</h1>
+    <div class="sub" id="twin-sub">on-device twin</div>
   </div>
   <span class="status" id="status">checking…</span>
 </header>
@@ -158,6 +158,42 @@
     };
     banner.classList.add('show');
   });
+
+  // ── Summon-aware: read ?summon= and the shared PAT ─────────────────
+  // sessionStorage WAH_PAT is shared with vbrainstem.html on the same origin
+  // (same-origin sessionStorage scope = per-tab, so this works when the user
+  // opens the app in the same tab they used for the simulator).
+  function getPat() {
+    try { return sessionStorage.getItem('WAH_PAT') || null; } catch(e) { return null; }
+  }
+  function authHeaders(extra) {
+    const h = Object.assign({Accept: 'application/vnd.github.raw'}, extra || {});
+    const pat = getPat();
+    if (pat) h.Authorization = `token ${pat}`;
+    return h;
+  }
+  async function fetchTwinMeta(ownerRepo) {
+    try {
+      const r = await fetch(`https://raw.githubusercontent.com/${ownerRepo}/main/rappid.json`, {cache: 'no-store'});
+      if (!r.ok) return null;
+      return await r.json();
+    } catch(e) { return null; }
+  }
+  async function applySummon() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get('summon');
+      if (!ref || !/^[\w.-]+\/[\w.-]+$/.test(ref)) return;
+      const meta = await fetchTwinMeta(ref);
+      if (!meta) return;
+      window.WAH_SUMMON = {ref, ...meta};
+      const nameEl = document.getElementById('twin-name');
+      const subEl = document.getElementById('twin-sub');
+      if (nameEl && meta.name) nameEl.textContent = meta.name;
+      if (subEl) subEl.textContent = (meta.kind || 'on-device twin') + (getPat() ? ' · 🔒 operator' : '');
+      document.title = (meta.name || 'Twin') + ' — on device';
+    } catch(e) { /* non-fatal */ }
+  }
 
   // ── Brainstem detection ───────────────────────────────────────────────
   const BRAINSTEM_URL = 'http://localhost:7071';
@@ -229,10 +265,14 @@
 
   // Boot
   (async () => {
+    await applySummon();  // pick up ?summon= and rewrite header
     const live = await probeBrainstem();
     convoEl.innerHTML = '';
     if (live) {
       appendTurn('system', 'Connected. Ask anything.');
+      if (window.WAH_SUMMON) {
+        appendTurn('system', 'Summoned ' + (window.WAH_SUMMON.name || window.WAH_SUMMON.ref) + (getPat() ? ' (operator view)' : ' (public view)'));
+      }
     } else {
       appendTurn('system', 'No local brainstem at ' + BRAINSTEM_URL + '. Install + start with the steps in the simulator\'s "Hatch on device" panel, then refresh.');
     }
