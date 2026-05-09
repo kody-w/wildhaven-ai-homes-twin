@@ -1,16 +1,16 @@
 {
   "schema": "rappcards/1.1.2",
   "id": "@kody-w/wildhaven-ai-homes-twin",
-  "name": "wildhaven-ai-homes-twin",
+  "name": "Wildhaven AI Homes Twin",
   "title": "Brainstem \u2014 AI / Twin",
-  "seed": "17568755380586556277",
-  "incantation": "BRONZE SILVER BRONZE COPPER BLADE GOLD BRONZE",
-  "hp": 152,
+  "seed": "14949028094066440304",
+  "incantation": "FORGE SILVER BLADE COPPER BLADE RUNE COPPER",
+  "hp": 237,
   "stats": {
-    "atk": 226,
-    "def": 254,
-    "spd": 66,
-    "int": 132
+    "atk": 247,
+    "def": 123,
+    "spd": 135,
+    "int": 95
   },
   "agent_types": [
     "LOGIC",
@@ -59,10 +59,10 @@
     "quality_tier": "verified",
     "license": "PolyForm-Small-Business",
     "kind": "twin",
-    "rappid": "37ad22f5-ed6d-48b1-b8b4-61019f58a42b",
+    "rappid": "rappid:v2:twin:@kody-w/wildhaven-ai-homes-twin:33b9888874d14e7f17bb9263b378903a@github.com/kody-w/wildhaven-ai-homes-twin",
     "gate_url": "https://kody-w.github.io/wildhaven-ai-homes-twin/",
-    "summon_url": "https://kody-w.github.io/RAPPcards/#summon&seed=17568755380586556277",
+    "summon_url": "https://kody-w.github.io/RAPPcards/#summon&seed=14949028094066440304",
     "_compliance": "rappcards/1.1.2 \u2014 kody-w/RAPPcards/SPEC.md"
   },
-  "avatar_svg": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 200\" role=\"img\">\n  <defs>\n    <radialGradient id=\"bg\" cx=\"50%\" cy=\"50%\" r=\"55%\">\n      <stop offset=\"0%\" stop-color=\"hsl(312,45%,12%)\"/>\n      <stop offset=\"100%\" stop-color=\"hsl(312,55%,4%)\"/>\n    </radialGradient>\n    <filter id=\"glow\"><feGaussianBlur stdDeviation=\"2\"/></filter>\n  </defs>\n  <rect width=\"200\" height=\"200\" fill=\"url(#bg)\"/>\n  <g filter=\"url(#glow)\" opacity=\"0.55\"><circle cx=\"100\" cy=\"100\" r=\"30\" fill=\"none\" stroke=\"#06d6a0\" stroke-width=\"0.6\" opacity=\"0.55\"/><circle cx=\"100\" cy=\"100\" r=\"48\" fill=\"none\" stroke=\"#06d6a0\" stroke-width=\"0.6\" opacity=\"0.45\"/><circle cx=\"100\" cy=\"100\" r=\"66\" fill=\"none\" stroke=\"#06d6a0\" stroke-width=\"0.6\" opacity=\"0.35\"/></g>\n  <polygon points=\"95.2,45.2 145.1,68.5 149.8,123.2 104.8,154.8 54.9,131.5 50.2,76.8\" fill=\"none\" stroke=\"#3a86ff\" stroke-width=\"2.2\" opacity=\"0.85\"/>\n  <polygon points=\"95.2,45.2 145.1,68.5 149.8,123.2 104.8,154.8 54.9,131.5 50.2,76.8\" fill=\"#1f5cc4\" opacity=\"0.18\"/>\n  <circle cx=\"100\" cy=\"100\" r=\"6\" fill=\"#06d6a0\"/><circle cx=\"100\" cy=\"100\" r=\"14\" fill=\"none\" stroke=\"#06d6a0\" stroke-width=\"1.2\" opacity=\"0.8\"/>\n  <g><circle cx=\"159.1\" cy=\"89.6\" r=\"2\" fill=\"#06d6a0\" opacity=\"0.7\"/><circle cx=\"150.6\" cy=\"144.0\" r=\"2\" fill=\"#06d6a0\" opacity=\"0.7\"/><circle cx=\"97.4\" cy=\"174.0\" r=\"2\" fill=\"#06d6a0\" opacity=\"0.7\"/><circle cx=\"35.3\" cy=\"148.7\" r=\"2\" fill=\"#06d6a0\" opacity=\"0.7\"/><circle cx=\"14.6\" cy=\"78.7\" r=\"2\" fill=\"#06d6a0\" opacity=\"0.7\"/><circle cx=\"72.5\" cy=\"41.1\" r=\"2\" fill=\"#06d6a0\" opacity=\"0.7\"/><circle cx=\"131.6\" cy=\"35.3\" r=\"2\" fill=\"#06d6a0\" opacity=\"0.7\"/></g>\n</svg>\n"
+  "avatar_svg": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 200\" role=\"img\">\n  <defs>\n    <radialGradient id=\"bg\" cx=\"50%\" cy=\"50%\" r=\"55%\">\n      <stop offset=\"0%\" stop-color=\"hsl(26,45%,12%)\"/>\n      <stop offset=\"100%\" stop-color=\"hsl(26,55%,4%)\"/>\n    </radialGradient>\n    <filter id=\"glow\"><feGaussianBlur stdDeviation=\"2\"/></filter>\n  </defs>\n  <rect width=\"200\" height=\"200\" fill=\"url(#bg)\"/>\n  <g filter=\"url(#glow)\" opacity=\"0.55\"><circle cx=\"100\" cy=\"100\" r=\"30\" fill=\"none\" stroke=\"#ffd166\" stroke-width=\"0.6\" opacity=\"0.55\"/><circle cx=\"100\" cy=\"100\" r=\"48\" fill=\"none\" stroke=\"#ffd166\" stroke-width=\"0.6\" opacity=\"0.45\"/><circle cx=\"100\" cy=\"100\" r=\"66\" fill=\"none\" stroke=\"#ffd166\" stroke-width=\"0.6\" opacity=\"0.35\"/><circle cx=\"100\" cy=\"100\" r=\"84\" fill=\"none\" stroke=\"#ffd166\" stroke-width=\"0.6\" opacity=\"0.25\"/><circle cx=\"100\" cy=\"100\" r=\"102\" fill=\"none\" stroke=\"#ffd166\" stroke-width=\"0.6\" opacity=\"0.15\"/></g>\n  <polygon points=\"56.7,133.9 54.4,69.2 115.2,47.1 155.0,98.1 118.8,151.7\" fill=\"none\" stroke=\"#ff6b6b\" stroke-width=\"2.2\" opacity=\"0.85\"/>\n  <polygon points=\"56.7,133.9 54.4,69.2 115.2,47.1 155.0,98.1 118.8,151.7\" fill=\"#c94646\" opacity=\"0.18\"/>\n  <circle cx=\"100\" cy=\"100\" r=\"6\" fill=\"#ffd166\"/><circle cx=\"100\" cy=\"100\" r=\"14\" fill=\"none\" stroke=\"#ffd166\" stroke-width=\"1.2\" opacity=\"0.8\"/>\n  <g><circle cx=\"85.5\" cy=\"158.2\" r=\"2\" fill=\"#ffd166\" opacity=\"0.7\"/><circle cx=\"39.3\" cy=\"128.3\" r=\"2\" fill=\"#ffd166\" opacity=\"0.7\"/><circle cx=\"33.5\" cy=\"67.6\" r=\"2\" fill=\"#ffd166\" opacity=\"0.7\"/><circle cx=\"81.8\" cy=\"21.1\" r=\"2\" fill=\"#ffd166\" opacity=\"0.7\"/><circle cx=\"154.2\" cy=\"30.7\" r=\"2\" fill=\"#ffd166\" opacity=\"0.7\"/><circle cx=\"165.0\" cy=\"98.9\" r=\"2\" fill=\"#ffd166\" opacity=\"0.7\"/><circle cx=\"146.3\" cy=\"155.2\" r=\"2\" fill=\"#ffd166\" opacity=\"0.7\"/></g>\n</svg>\n"
 }
