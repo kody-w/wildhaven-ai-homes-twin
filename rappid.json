@@ -1,12 +1,12 @@
 {
   "schema": "rapp-rappid/2.0",
-  "rappid": "rappid:v2:twin:@kody-w/wildhaven-ai-homes-twin:33b9888874d14e7f17bb9263b378903a@github.com/kody-w/wildhaven-ai-homes-twin",
+  "rappid": "rappid:@kody-w/wildhaven-ai-homes-twin:33b9888874d14e7f17bb9263b378903a",
   "kind": "twin",
   "name": "wildhaven-ai-homes-twin",
   "display_name": "Wildhaven AI Homes Twin",
   "github": "https://github.com/kody-w/wildhaven-ai-homes-twin",
   "url": "https://kody-w.github.io/wildhaven-ai-homes-twin/",
-  "parent_rappid": "rappid:v2:operator:@kody-w/kody-twin:91d006ca7bd052bfa5021d623122012f@github.com/kody-w/kody-twin",
+  "parent_rappid": "rappid:@kody-w/kody-twin:91d006ca7bd052bfa5021d623122012f",
   "parent_repo": "https://github.com/kody-w/RAPP",
   "planted_by": "kody-w",
   "planted_at": "2026-05-09T22:11:36Z",
@@ -14,5 +14,6 @@
   "_planted_by_agent": "backfill_seeds",
   "_backfilled_at": "2026-05-09T22:11:36Z",
   "_backfill_reason": "Article XLVI compliance pass",
-  "_backfill_reason_parent": "Article XLVI.6 \u2014 parent_rappid for rebuild"
+  "_backfill_reason_parent": "Article XLVI.6 \u2014 parent_rappid for rebuild",
+  "_migrated_from": "rappid:v2:twin:@kody-w/wildhaven-ai-homes-twin:33b9888874d14e7f17bb9263b378903a@github.com/kody-w/wildhaven-ai-homes-twin"
 }
