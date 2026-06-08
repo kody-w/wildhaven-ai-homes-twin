@@ -1,36 +1,47 @@
-# RAPPID_SPEC — Identity v2
+# RAPPID_SPEC — Identity (Eternity)
 
-> **Frozen excerpt** of the canonical rappid contract (`rapp-rappid/2.0`). Bundled at planting time on 2026-05-09T12:52:19Z.
+> **Frozen excerpt** of the canonical rappid contract (`rapp-rappid/2.0`). Bundled at planting time on 2026-05-09T12:52:19Z. Format consolidated to the Eternity form per Constitution Art. XXXIV.1 (locked 2026-06-03).
 
 ## Format
 
 ```
-rappid:v2:<kind>:@<owner>/<repo>:<32-hex-no-dashes>@github.com/<owner>/<repo>
+rappid:@<owner>/<slug>:<hex>
 ```
+
+One self-locating string. No `v2:`/`v3:` prefix, no inline `<kind>` segment, no
+trailing `@github.com/...` suffix — `github.com/<owner>/<slug>` is the door,
+derived from `@<owner>/<slug>` by string parsing. `kind` lives in the
+`rappid.json` **record** (a field), not the string.
 
 Example (this neighborhood's):
 
 ```
-rappid:v2:<kind>:@kody-w/wildhaven-ai-homes-twin:<32-hex>@github.com/kody-w/wildhaven-ai-homes-twin
+rappid:@kody-w/wildhaven-ai-homes-twin:<hex>
 ```
 
 (See `../rappid.json` for the actual value.)
+
+Every legacy form is read forever and canonicalized (`tools/door_address.py::canonicalize_rappid`); only the Eternity form is emitted. The prior forms were:
+
+```
+v1  <uuid>                                                              (bare UUID — not self-locating)
+v2  rappid:v2:<kind>:@<owner>/<repo>:<32-hex>@github.com/<owner>/<repo>  (envelope-decorated)
+```
 
 ## Components
 
 | Part | Rule |
 |---|---|
-| Prefix `rappid:v2:` | Literal. Tells parsers this is a v2 rappid. |
-| `<kind>` | One of: `neighborhood`, `ant-farm`, `braintrust`, `workspace`, `twin`, `prototype`. |
-| `@<owner>/<repo>` | The GitHub composite identity. The `@` prefix is literal and required. |
-| `<32-hex-no-dashes>` | A UUID4 with dashes stripped — 32 lowercase hex characters. Minted ONCE at planting; permanent thereafter. |
-| `@github.com/<owner>/<repo>` | The substrate URL, suffixed for self-resolution. |
+| Prefix `rappid:` | Literal. |
+| `@<owner>/<slug>` | The GitHub composite identity and canonical location. The `@` prefix is literal and required. `github.com/<owner>/<slug>` is the door. |
+| `<hex>` | The identity hash (lowercase hex). Minted ONCE at planting; permanent thereafter. Grandfathered 32-hex (UUID4, dashes stripped) is preserved as-is and never regenerated. |
+| `kind` | NOT in the string — carried in the `rappid.json` record. One of: `neighborhood`, `ant-farm`, `braintrust`, `workspace`, `twin`, `prototype`. |
 
 ## Invariants (Constitution Art. XXXIV.5)
 
 1. **Permanence.** Once minted, a rappid is permanent for the lifetime of the neighborhood. Re-grafting, re-planting, kernel upgrades — none of these mint a new rappid.
 2. **Bond preservation.** The bond technique (egg → overlay → hatch back) preserves the rappid through every kernel upgrade.
-3. **Lineage chain.** A neighborhood's `parent_rappid` chains back to its ancestor (the species root for many: `rappid:v2:prototype:@rapp/origin:0b635450c04249fbb4b1bdb571044dec@github.com/kody-w/RAPP`).
+3. **Lineage chain.** A neighborhood's `parent_rappid` chains back to its ancestor (the species root for many: `rappid:@kody-w/RAPP:0b635450c04249fbb4b1bdb571044dec`).
 4. **No two organisms share a rappid.** Mint via `uuid.uuid4().hex` — collision probability is negligible.
 5. **The rappid is the seed source for the neighborhood's holocard.** `derive_seed(rappid_str)` via BLAKE2b-64 produces a deterministic 64-bit ID. Same rappid → same seed → same incantation, forever.
 
@@ -39,8 +50,8 @@ rappid:v2:<kind>:@kody-w/wildhaven-ai-homes-twin:<32-hex>@github.com/kody-w/wild
 | Field | Required | Notes |
 |---|---|---|
 | `schema`       | yes | `rapp-rappid/2.0` |
-| `rappid`       | yes | The full v2 string |
-| `kind`         | yes | One of the 6 kinds above |
+| `rappid`       | yes | The full Eternity string `rappid:@<owner>/<slug>:<hex>` |
+| `kind`         | yes | One of the 6 kinds above (carried here in the record, not in the string) |
 | `name`         | yes | Slug — matches the repo name |
 | `display_name` | yes | Human-readable |
 | `github`       | yes | `https://github.com/<owner>/<repo>` |
