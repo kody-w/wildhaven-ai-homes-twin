@@ -59,7 +59,7 @@
     "quality_tier": "verified",
     "license": "PolyForm-Small-Business",
     "kind": "twin",
-    "rappid": "rappid:@kody-w/wildhaven-ai-homes-twin:33b9888874d14e7f17bb9263b378903a",
+    "rappid": "rappid:@kody-w/wildhaven-ai-homes-twin:df9c3f1f4b09d000720e93be4248d44213025ba5f76bf1180dc5d1ba0b0efd36",
     "gate_url": "https://kody-w.github.io/wildhaven-ai-homes-twin/",
     "summon_url": "https://kody-w.github.io/RAPPcards/#summon&seed=14949028094066440304",
     "_compliance": "rappcards/1.1.2 \u2014 kody-w/RAPPcards/SPEC.md"

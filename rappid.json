@@ -1,6 +1,6 @@
 {
-  "schema": "rapp-rappid/2.0",
-  "rappid": "rappid:@kody-w/wildhaven-ai-homes-twin:33b9888874d14e7f17bb9263b378903a",
+  "schema": "rapp/1",
+  "rappid": "rappid:@kody-w/wildhaven-ai-homes-twin:df9c3f1f4b09d000720e93be4248d44213025ba5f76bf1180dc5d1ba0b0efd36",
   "kind": "twin",
   "name": "wildhaven-ai-homes-twin",
   "display_name": "Wildhaven AI Homes Twin",
@@ -14,6 +14,9 @@
   "_planted_by_agent": "backfill_seeds",
   "_backfilled_at": "2026-05-09T22:11:36Z",
   "_backfill_reason": "Article XLVI compliance pass",
-  "_backfill_reason_parent": "Article XLVI.6 \u2014 parent_rappid for rebuild",
-  "_migrated_from": "rappid:v2:twin:@kody-w/wildhaven-ai-homes-twin:33b9888874d14e7f17bb9263b378903a@github.com/kody-w/wildhaven-ai-homes-twin"
+  "_backfill_reason_parent": "Article XLVI.6 — parent_rappid for rebuild",
+  "_migrated_from": [
+    "rappid:@kody-w/wildhaven-ai-homes-twin:33b9888874d14e7f17bb9263b378903a",
+    "rappid:v2:twin:@kody-w/wildhaven-ai-homes-twin:33b9888874d14e7f17bb9263b378903a@github.com/kody-w/wildhaven-ai-homes-twin"
+  ]
 }
