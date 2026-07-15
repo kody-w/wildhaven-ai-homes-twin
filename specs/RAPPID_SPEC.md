@@ -1,6 +1,6 @@
 # RAPPID_SPEC — Identity (Eternity)
 
-> **Frozen excerpt** of the canonical rappid contract (`rapp-rappid/2.0`). Bundled at planting time on 2026-05-09T12:52:19Z. Format consolidated to the Eternity form per Constitution Art. XXXIV.1 (locked 2026-06-03).
+> **Frozen excerpt** of the canonical rappid contract (`rapp/1`). Bundled at planting time on 2026-05-09T12:52:19Z. Format consolidated to the Eternity form per Constitution Art. XXXIV.1 (locked 2026-06-03).
 
 ## Format
 
@@ -45,11 +45,11 @@ v2  rappid:v2:<kind>:@<owner>/<repo>:<32-hex>@github.com/<owner>/<repo>  (envelo
 4. **No two organisms share a rappid.** Mint via `uuid.uuid4().hex` — collision probability is negligible.
 5. **The rappid is the seed source for the neighborhood's holocard.** `derive_seed(rappid_str)` via BLAKE2b-64 produces a deterministic 64-bit ID. Same rappid → same seed → same incantation, forever.
 
-## Required fields in `../rappid.json` (`rapp-rappid/2.0`)
+## Required fields in `../rappid.json` (`rapp/1`)
 
 | Field | Required | Notes |
 |---|---|---|
-| `schema`       | yes | `rapp-rappid/2.0` |
+| `schema`       | yes | `rapp/1` |
 | `rappid`       | yes | The full Eternity string `rappid:@<owner>/<slug>:<hex>` |
 | `kind`         | yes | One of the 6 kinds above (carried here in the record, not in the string) |
 | `name`         | yes | Slug — matches the repo name |
