@@ -1,5 +1,9 @@
 # Wildhaven AI Homes — Pre-Founder Twin
 
+<!-- rapp1:network-header:start -->
+[![RAPP/1](https://kody-w.github.io/rapp-hive-public/portfolio/badges/wildhaven-ai-homes-twin.svg)](https://github.com/kody-w/rapp-hive-public/blob/main/portfolio/repos/wildhaven-ai-homes-twin.md) · **New to RAPP?** [Start here: get your Brainstem →](https://github.com/kody-w/rapp-installer#start-here)
+<!-- rapp1:network-header:end -->
+
 > **This repository is a brand operating in public, before the team incorporates.**
 
 This is not yet a company. It is a *Pre-Founder twin* — a digital organism that holds the brand's vision, voice, and operational presence ahead of the human team that will eventually staff it. The twin lives here. You can read everything it has decided. You can talk to it. You can disagree with it. When the founding team is hired, they will inherit eighteen months of synthetic operational memory as their first day's onboarding.
